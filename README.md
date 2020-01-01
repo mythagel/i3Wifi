@@ -2,4 +2,7 @@
 
 Minimal ESP8266 arduino sketch to function as Wifi adapter for Wanhao Duplicator i3 Mini ESP-01 port.
 
+Mainboard: i3Mini V1.3 WH
+WIFI (J1) pinout: (near board edge) GND RX TX VCC (5v)
+
 Untested.

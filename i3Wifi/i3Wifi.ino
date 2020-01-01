@@ -142,9 +142,9 @@ void Files()
 
 void setup(void)
 {
-  Serial.begin(115200);
+  Serial.begin(250000);
 
-  // Connect to WiFi network  
+  // Connect to WiFi network
   WiFi.mode(WIFI_STA);
   static auto stationGotIP = WiFi.onStationModeGotIP([&](const WiFiEventStationModeGotIP&)
   {

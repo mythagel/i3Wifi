@@ -50,7 +50,7 @@ void update()
 
 void lcdMessage(const char* s)
 {
-  command(String("M117 ") + s);
+  command("M117 ", s);
 }
 
 void write(uint8_t* buf, size_t len)
@@ -58,15 +58,17 @@ void write(uint8_t* buf, size_t len)
   Serial.write(buf, len);
 }
 
-bool command(String s)
-{
-  return command(s.c_str());
-}
-
 bool command(const char* s)
 {
+  return command(s, nullptr);
+}
+
+bool command(const char* s, const char* arg)
+{
   bool success = false;
-  Serial.println(s);
+  Serial.print(s);
+  if (arg)
+    Serial.println(arg);
   readLines([&](const char* s) { success = (String(s) == "ok"); }, true);
   return success;
 }

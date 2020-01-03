@@ -57,9 +57,10 @@ public:
     Checksum(BufferLine& bufferLine) : bufferLine(bufferLine) {}
     void process(uint8_t c)
     {
+        constexpr long kMaxLineNumber = 9;  // Minimises transmission length
         if (lineStart && c != '\n')
         {
-            if (lineNumber+1 > 99)
+            if (lineNumber+1 > kMaxLineNumber)
             {
                 lineNumber = -1;
                 process('M');process('1');process('1');process('0');process('\n');  // M110

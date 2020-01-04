@@ -10,7 +10,7 @@ class Transmit
 {
 public:
     Transmit()
-        : bl(callback, this),
+        : bl(thunk, this),
         cs(bl),
         m(cs)
     {}
@@ -25,10 +25,38 @@ public:
         m.process(&c, 1);
     }
 private:
-    static void callback(uint8_t* line, size_t length, void* context)
+    static void thunk(void* context)
     {
-        // TODO
-        Serial.write(line, length);
+      static_cast<Transmit*>(context)->callback();
+    }
+    void callback()
+    {
+      constexpr uint8_t xon = 17;
+      constexpr uint8_t xoff = 19;
+      auto outc = [](uint8_t ch)
+      {
+        Serial.write(ch);
+        int c = Serial.read();
+        if (c == xoff)
+        {
+          while (1)
+          {
+            c = Serial.read();
+            if (c == xon)
+              break;
+            if (c != -1)
+              ;// process
+          }
+          c = -1;
+        }
+        if (c >= 0)
+        {
+          // process
+        }
+      };
+
+      bl.emit(outc);
+      bl.pop();
     }
 
     GCode::BufferLine bl;
@@ -59,6 +87,7 @@ void Files()
   HTTPUpload& upload = server.upload();
   if(upload.status == UPLOAD_FILE_START)
   {
+    // TODO reset transmit, which will send M110N0
     //Marlin::command("M110 N0");
     Marlin::command("M28 ", upload.filename.c_str());
   }

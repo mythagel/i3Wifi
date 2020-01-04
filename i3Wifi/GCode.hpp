@@ -1,4 +1,5 @@
 #include <cstdint>
+#include "RingBuffer.hpp"
 
 namespace GCode
 {
@@ -6,49 +7,40 @@ namespace GCode
 class BufferLine
 {
 public:
-    using Callback = void (uint8_t* line, size_t length, void* context);
+    using Callback = void (void* context);
     BufferLine(Callback* callback, void* context): callback(callback), context(context) {}
 
     void process(uint8_t c)
     {
-        uint8_t* buffer = idx ? buffer1 : buffer0;
-        size_t& length = idx ? length1 : length0;
+        while (true)
+        {
+            bool success;
+            if (pos == (size_t)-1)
+                success = rb.push(c, &pos);
+            else
+                success = rb.append(c, pos);
+            if (success)
+                break;
 
-        buffer[length++] = c;
+            callback(context);
+        }
+
         if (c == '\n')
         {
-            emit(buffer, length);
-            swapBuffers();
+            callback(context);
+            pos = -1;
         }
     }
 
-    void emitBuffered()
-    {
-        uint8_t* buffer = idx ? buffer0 : buffer1;
-        size_t length = idx ? length0 : length1;
-        emit(buffer, length);
-    }
-
-private:
-    void swapBuffers()
-    {
-        idx = !idx;
-        size_t& length = idx ? length1 : length0;
-        length = 0;
-    }
-    void emit(uint8_t* line, size_t length)
-    {
-        callback(line, length, context);
-    }
+    template <typename Fn> void emit(Fn&& outc) const { rb.emit(outc); }
+    template <typename Fn> void emit(size_t pos, Fn&& outc) const { rb.emit(pos, outc); }
+    bool pop() { return rb.pop(); }
 
 private:
     Callback* callback;
     void* context;
-    uint8_t buffer0[96];
-    uint8_t buffer1[96];
-    size_t length0 = 0;
-    size_t length1 = 0;
-    bool idx = false;
+    RingBuffer<256> rb;
+    size_t pos = -1;
 };
 
 class Checksum

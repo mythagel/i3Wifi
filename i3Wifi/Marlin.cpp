@@ -1,36 +1,10 @@
 #include "Marlin.hpp"
 
-template <typename Fn>
-void readLines(Fn&& emitLine, bool oneLine = false)
-{
-  constexpr size_t kMaxLength = 96;
-  static char line[kMaxLength];
-  static size_t lineLen = 0;
-
-  do
-  {
-    while(Serial.available() > 0)
-    {
-      char c = Serial.read();
-      if (c == '\r' || c == '\n')
-      {
-        line[lineLen++] = 0;
-        emitLine(line);
-        lineLen = 0;
-
-        if (oneLine)
-          return;
-      }
-      else
-      {
-        line[lineLen++] = c;
-      }
-    }
-  } while (oneLine);
-}
-
 namespace Marlin
 {
+
+static AsyncCompletion* completion = nullptr;
+void* completionContext = nullptr;
 
 void init()
 {
@@ -40,12 +14,60 @@ void init()
 //    Serial.begin(1000000);
 }
 
+void handleAsyncMessage(const String& line)
+{
+  // TODO
+}
+
 void update()
 {
-  readLines([](const char* s)
-    {
-      // TODO
-    });
+  while(Serial.available() > 0)
+    update(Serial.read());
+}
+
+void handleLine(const String& line)
+{
+  if (line == "ok")
+  {
+    if (completion)
+      completion(line, Completion::Success, completionContext);
+    completion = nullptr;
+  }
+  else if (line.startsWith("Error:"))
+  {
+    if (completion)
+      completion(line, Completion::Error, completionContext);
+    completion = nullptr;
+  }
+  else if (completion)
+  {
+    completion(line, Completion::Indeterminate, completionContext);
+  }
+  else
+  {
+    handleAsyncMessage(line);
+  }
+}
+
+void update(int c)
+{
+  constexpr size_t kMaxLength = 96;
+  static char line[kMaxLength];
+  static size_t lineLen = 0;
+
+  if (c == -1)
+    return;
+
+  if (c == '\r' || c == '\n')
+  {
+    line[lineLen++] = 0;
+    handleLine(line);
+    lineLen = 0;
+  }
+  else
+  {
+    line[lineLen++] = c;
+  }
 }
 
 void lcdMessage(const char* s)
@@ -53,9 +75,10 @@ void lcdMessage(const char* s)
   command("M117 ", s);
 }
 
-void write(uint8_t* buf, size_t len)
+void setHandler(AsyncCompletion* complt, void* context)
 {
-  Serial.write(buf, len);
+  completion = complt;
+  completionContext = context;
 }
 
 bool command(const char* s)
@@ -65,12 +88,19 @@ bool command(const char* s)
 
 bool command(const char* s, const char* arg)
 {
-  bool success = false;
+  Completion complete;
+
   Serial.print(s);
   if (arg)
     Serial.println(arg);
-  readLines([&](const char* s) { success = (String(s) == "ok"); }, true);
-  return success;
+  auto commandCompletion = [](String line, Completion complete, void* context)
+  {
+    *static_cast<Completion*>(context) = complete;
+  };
+  setHandler(commandCompletion, &complete);
+  while (complete == Completion::Indeterminate)
+    update();
+  return complete == Completion::Success;
 }
 
 }

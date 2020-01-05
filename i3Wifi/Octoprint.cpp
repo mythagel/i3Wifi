@@ -31,6 +31,7 @@ private:
     }
     void callback()
     {
+      // TODO move logic to Marlin class
       constexpr uint8_t xon = 17;
       constexpr uint8_t xoff = 19;
       auto outc = [](uint8_t ch)
@@ -44,19 +45,28 @@ private:
             c = Serial.read();
             if (c == xon)
               break;
-            if (c != -1)
-              ;// process
+            Marlin::update(c);
           }
           c = -1;
         }
-        if (c >= 0)
-        {
-          // process
-        }
+        Marlin::update(c);
       };
 
-      bl.emit(outc);
-      bl.pop();
+      auto commandCompletion = [](String line, Marlin::Completion complete, void* context)
+      {
+        auto self = static_cast<Transmit*>(context);
+        if (complete == Marlin::Completion::Success)
+        {
+          self->bl.buffer().pop();
+        }
+        else if (complete == Marlin::Completion::Error)
+        {
+          self->bl.buffer().reset_read();
+        }
+      };
+      Marlin::setHandler(commandCompletion, this);
+      bl.buffer().emit(outc);
+      bl.buffer().pop_read();
     }
 
     GCode::BufferLine bl;

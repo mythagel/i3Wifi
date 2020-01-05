@@ -32,9 +32,7 @@ public:
         }
     }
 
-    template <typename Fn> void emit(Fn&& outc) const { rb.emit(outc); }
-    template <typename Fn> void emit(size_t pos, Fn&& outc) const { rb.emit(pos, outc); }
-    bool pop() { return rb.pop(); }
+    RingBuffer<256>& buffer() { return rb; }
 
 private:
     Callback* callback;

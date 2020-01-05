@@ -29,33 +29,19 @@ public:
         return true;
     }
 
-    /*
-    bool push(const uint8_t* line, uint8_t length, size_t* pos = nullptr)
+    template <typename Fn>
+    void emit(Fn&& outc) const { emit(readhead+1, outc); }
+    bool pop_read()
     {
-        if (bcapacity() < length+1)
+        if (empty())
             return false;
-
-        ++count;
-        bpush(length);
-        if (pos) *pos = tail;
-        for (unsigned i = 0; i < length; ++i)
-            bpush(line[i]);
+        --count;
+        uint8_t length = peek(readhead);
+        readhead += (length + 1);
+        readhead = readhead % N;
         return true;
     }
-
-    uint8_t get(uint8_t* line) const { return get(head+1, line); }
-    uint8_t get(size_t pos, uint8_t* line) const
-    {
-        uint8_t length = peek(pos - 1);
-        for (unsigned i = 0; i < length; ++i, ++pos)
-            line[i] = buffer[pos % N];
-
-        return length;
-    }
-    */
-
-    template <typename Fn>
-    void emit(Fn&& outc) const { emit(head+1, outc); }
+    void reset_read() { readhead = head; }
     template <typename Fn>
     void emit(size_t pos, Fn&& outc) const
     {
@@ -101,4 +87,5 @@ private:
     size_t head = 0;
     size_t tail = 0;
     size_t count = 0;
+    size_t readhead = 0;
 };

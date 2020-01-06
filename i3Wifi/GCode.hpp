@@ -8,37 +8,26 @@ class BufferLine
 {
 public:
     using Callback = void (void* context);
-    BufferLine(Callback* callback, void* context): callback(callback), context(context) {}
+    BufferLine(Callback* update, void* context): update(update), context(context) {}
 
     void process(uint8_t c)
     {
-        while (true)
-        {
-            bool success;
-            if (pos == (size_t)-1)
-                success = rb.push(c, &pos);
-            else
-                success = rb.append(c, pos);
-            if (success)
-                break;
-
-            callback(context);
-        }
+        while (! rb.append(c))
+            update(context);
 
         if (c == '\n')
         {
-            callback(context);
-            pos = -1;
+            rb.push();
+            update(context);
         }
     }
 
     RingBuffer<256>& buffer() { return rb; }
 
 private:
-    Callback* callback;
+    Callback* update;
     void* context;
     RingBuffer<256> rb;
-    size_t pos = -1;
 };
 
 class Checksum

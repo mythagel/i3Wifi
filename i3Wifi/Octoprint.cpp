@@ -10,7 +10,7 @@ class Transmit
 {
 public:
     Transmit()
-        : bl(thunk, this),
+        : bl(update_thunk, this),
         cs(bl),
         m(cs)
     {}
@@ -25,11 +25,11 @@ public:
         m.process(&c, 1);
     }
 private:
-    static void thunk(void* context)
+    static void update_thunk(void* context)
     {
-      static_cast<Transmit*>(context)->callback();
+      static_cast<Transmit*>(context)->update();
     }
-    void callback()
+    void update()
     {
       // TODO move logic to Marlin class
       constexpr uint8_t xon = 17;

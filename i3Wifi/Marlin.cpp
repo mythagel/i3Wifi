@@ -3,7 +3,8 @@
 namespace Marlin
 {
 
-static AsyncCompletion* completion = nullptr;
+Completion completion = Completion::Indeterminate;
+AsyncCompletion* completionCallback = nullptr;
 void* completionContext = nullptr;
 
 void init()
@@ -29,19 +30,21 @@ void handleLine(const String& line)
 {
   if (line == "ok")
   {
-    if (completion)
-      completion(line, Completion::Success, completionContext);
-    completion = nullptr;
+    if (completionCallback)
+    {
+      if (completion == Completion::Indeterminate)
+        completion = Completion::Success;
+
+      completionCallback(line, completion, completionContext);
+      completionCallback = nullptr;
+    }
   }
-  else if (line.startsWith("Error:"))
+  else if (completionCallback)
   {
-    if (completion)
-      completion(line, Completion::Error, completionContext);
-    completion = nullptr;
-  }
-  else if (completion)
-  {
-    completion(line, Completion::Indeterminate, completionContext);
+    if (line.startsWith("Error:"))
+      completion = Completion::Error;
+
+    completionCallback(line, Completion::Indeterminate, completionContext);
   }
   else
   {
@@ -77,7 +80,8 @@ void lcdMessage(const char* s)
 
 void setHandler(AsyncCompletion* complt, void* context)
 {
-  completion = complt;
+  completion = Completion::Indeterminate;
+  completionCallback = complt;
   completionContext = context;
 }
 

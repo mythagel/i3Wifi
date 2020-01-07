@@ -36,7 +36,7 @@ void handleLine(const String& line)
         completion = Completion::Success;
 
       completionCallback(line, completion, completionContext);
-      completionCallback = nullptr;
+      completion = Completion::Indeterminate;
     }
   }
   else if (completionCallback)
@@ -80,7 +80,6 @@ void lcdMessage(const char* s)
 
 void setHandler(AsyncCompletion* complt, void* context)
 {
-  completion = Completion::Indeterminate;
   completionCallback = complt;
   completionContext = context;
 }
@@ -92,8 +91,6 @@ bool command(const char* s)
 
 bool command(const char* s, const char* arg)
 {
-  Completion complete;
-
   Serial.print(s);
   if (arg)
     Serial.println(arg);
@@ -101,9 +98,12 @@ bool command(const char* s, const char* arg)
   {
     *static_cast<Completion*>(context) = complete;
   };
+
+  Completion complete;
   setHandler(commandCompletion, &complete);
   while (complete == Completion::Indeterminate)
     update();
+  setHandler(nullptr, nullptr);
   return complete == Completion::Success;
 }
 

@@ -13,28 +13,30 @@ public:
         if (bcapacity() < 2)
             return false;
 
-        if (write == -1)
+        if (write == (size_t)-1)
         {
             ++count;
-            bpush(0);
             write = tail;
+            bpush(0);
         }
 
-        uint8_t& length = buffer[(write - 1) % N];
+        uint8_t& length = buffer[write];
+        if (length == 255)
+            return false;
         ++length;
         bpush(c);
         return true;
     }
     bool push()
     {
-        if (write == -1)
+        if (write == (size_t)-1)
             return false;
-        write = -1;
+        write = (size_t)-1;
         return true;
     }
 
     template <typename Fn>
-    void emit(Fn&& outc) const { emit(readhead+1, outc); }
+    void emit(Fn&& outc) const { emit(readhead, outc); }
     bool pop_read()
     {
         if (readhead == tail || readhead == write)
@@ -50,7 +52,7 @@ public:
     {
         if (readhead == tail || readhead == write)
             return;
-        uint8_t length = peek(pos - 1);
+        uint8_t length = peek(pos++);
         for (unsigned i = 0; i < length; ++i, ++pos)
             outc(buffer[pos % N]);
     }
@@ -77,7 +79,7 @@ private:
             return N - (head - tail);
     }
 
-    size_t bcapacity() const { return (N - bsize()) -1; }
+    size_t bcapacity() const { return (N - bsize()); }
     uint8_t peek(size_t pos) const { return buffer[pos % N]; }
 
     void bpush(uint8_t c)
@@ -93,5 +95,5 @@ private:
     size_t tail = 0;
     size_t count = 0;
     size_t readhead = 0;
-    size_t write = 0;
+    size_t write = -1;
 };

@@ -108,10 +108,74 @@ private:
     int checksum = 0;
 };
 
+class MinDigits
+{
+public:
+    MinDigits(Checksum& checksum) : checksum(checksum) {}
+    void process(uint8_t c)
+    {
+        if (in_mantissa)
+        {
+            if (c == '0')
+                ++zero_digits;
+            else if (isdigit(c))
+                flush(c);
+            else
+            {
+                reset(c);
+                in_mantissa = false;
+            }
+        }
+        else
+        {
+            if (c == '.')
+            {
+                in_mantissa = true;
+                emit_point = true;
+            }
+            else
+                emit(c);
+        }
+    }
+
+private:
+    static bool isdigit(uint8_t c)
+    {
+        return c >= '0' && c <= '9';
+    }
+    void flush(uint8_t c)
+    {
+        if (emit_point)
+            emit('.');
+        emit_point = false;
+        while (zero_digits)
+        {
+            emit('0');
+            --zero_digits;
+        }
+        reset(c);
+    }
+    void reset(uint8_t c)
+    {
+        zero_digits = 0;
+        emit(c);
+    }
+    void emit(uint8_t c)
+    {
+        checksum.process(c);
+    }
+
+private:
+    Checksum& checksum;
+    bool in_mantissa = false;
+    bool emit_point = false;
+    unsigned zero_digits = 0;
+};
+
 class Minify
 {
 public:
-    Minify(Checksum& checksum) : checksum(checksum) {}
+    Minify(MinDigits& digits) : digits(digits) {}
     void process(uint8_t* buf, size_t bufLen)
     {
         size_t readIndex = 0;
@@ -160,7 +224,7 @@ public:
 private:
     void emit(uint8_t c)
     {
-        checksum.process(c);
+        digits.process(c);
     }
 
 private:
@@ -171,7 +235,7 @@ private:
         Comment,
     };
 
-    Checksum& checksum;
+    MinDigits& digits;
     State state = State::Emit;
     int lastChar = -1;
 };

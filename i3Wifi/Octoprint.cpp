@@ -12,7 +12,8 @@ public:
     Transmit()
         : bl(update_thunk, this),
         cs(bl),
-        m(cs)
+        md(cs),
+        m(md)
     {}
 
     void process(uint8_t* buffer, size_t length)
@@ -71,6 +72,7 @@ private:
 
     GCode::BufferLine bl;
     GCode::Checksum cs;
+    GCode::MinDigits md;
     GCode::Minify m;
 };
 

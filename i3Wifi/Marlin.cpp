@@ -26,9 +26,9 @@ void* completionContext = nullptr;
 void init()
 {
   // Increase baud
-//  Serial.begin(250000);
-//  if (command(String("M575 ") + String(1000000)))
-//    Serial.begin(1000000);
+  Serial.begin(250000);
+  if (command("M575 ", String(1000000).c_str()))
+     Serial.begin(1000000);
 }
 
 void handleAsyncMessage(const String& line)

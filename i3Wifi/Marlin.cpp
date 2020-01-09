@@ -25,9 +25,9 @@ void* completionContext = nullptr;
 
 void init()
 {
-  // Increase baud
+  // Increase baud on Marlin USART2
   Serial.begin(250000);
-  if (command("M575 ", String(1000000).c_str()))
+  if (command("M575P1S", String(1000000).c_str()))
      Serial.begin(1000000);
 }
 

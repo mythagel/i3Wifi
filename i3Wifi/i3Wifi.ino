@@ -58,4 +58,5 @@ void loop(void)
     server.handleClient();
     Marlin::update();
   }
+  delay(1);
 }

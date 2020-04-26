@@ -63,10 +63,14 @@ private:
             if (c == xon)
               break;
             Marlin::update(c);
+            delay(0);
           }
           c = -1;
         }
-        Marlin::update(c);
+        else
+        {
+          Marlin::update(c);
+        }
       };
 
       auto commandCompletion = [](String line, Marlin::Completion complete, void* context)
@@ -115,9 +119,11 @@ void Files()
   HTTPUpload& upload = server.upload();
   if(upload.status == UPLOAD_FILE_START)
   {
+    Marlin::update();
     // TODO reset transmit, which will send M110N0
     //Marlin::command("M110 N0");
-    Marlin::command("M28 ", upload.filename.c_str());
+    Marlin::command("M30 ", "wifi.gco");
+    Marlin::command("M28 ", "wifi.gco");
   }
   else if(upload.status == UPLOAD_FILE_WRITE)
   {
@@ -128,13 +134,13 @@ void Files()
     transmit.flush();
     
     Marlin::command("M29");
-    server.sendHeader("Location","/api/files/local/{todofilename}");
+    server.sendHeader("Location","/api/files/local/wifi.gco");
     server.send(200, "application/json", "todojson");
 
     bool print = server.arg("print") == "true";
     if (print)
     {
-      Marlin::command("M23 ", upload.filename.c_str());
+      Marlin::command("M23 ", "wifi.gco");
       Marlin::command("M24");
     }
   }

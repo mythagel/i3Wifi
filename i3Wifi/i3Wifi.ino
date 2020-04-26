@@ -28,9 +28,8 @@ ESP8266WebServer server(80);
 
 void setup(void)
 {
-  // Swap RX/TX to prevent ESP8266 rom from disrupting Marlin
-  Serial.begin(115200);
-  //Serial.swap();
+  Serial.begin(1000000);
+  //Serial.swap();  // Connect RX/TX swapped, to prevent rom bootloader messages being seen by Marlin
 
   Marlin::init();
 
@@ -56,7 +55,7 @@ void loop(void)
   {
     MDNS.update();
     server.handleClient();
-    Marlin::update();
+    //Marlin::update(); // Disable global update
   }
   delay(1);
 }

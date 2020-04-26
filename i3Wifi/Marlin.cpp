@@ -26,9 +26,8 @@ void* completionContext = nullptr;
 void init()
 {
   // Increase baud on Marlin USART2
-  Serial.begin(250000);
-  if (command("M575P1S", String(1000000).c_str()))
-     Serial.begin(1000000);
+//  if (command("M575P1S", String(1000000).c_str()))
+//     Serial.begin(1000000);
 }
 
 void handleAsyncMessage(const String& line)
@@ -80,7 +79,8 @@ void update(int c)
   if (c == '\r' || c == '\n')
   {
     line[lineLen++] = 0;
-    handleLine(line);
+    if (line[0])
+      handleLine(line);
     lineLen = 0;
   }
   else
@@ -109,13 +109,15 @@ bool command(const char* s, const char* arg)
 {
   Serial.print(s);
   if (arg)
-    Serial.println(arg);
+    Serial.print(arg);
+  Serial.print("\n");
+
   auto commandCompletion = [](String line, Completion complete, void* context)
   {
     *static_cast<Completion*>(context) = complete;
   };
 
-  Completion complete;
+  Completion complete = Completion::Indeterminate;
   setHandler(commandCompletion, &complete);
   while (complete == Completion::Indeterminate)
     update();
